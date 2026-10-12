@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mi Colombia</title>
+  <meta name="description" content="Mapa personal de los municipios de Colombia que he visitado.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#171c23" media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icono.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icono-180.png">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="css/estilos.css">
+  <script>
+    // Aplica el tema guardado antes de pintar, para evitar un parpadeo.
+    try {
+      const tema = localStorage.getItem('mi-colombia:tema');
+      if (tema) document.documentElement.dataset.theme = tema;
+    } catch (e) { /* sin almacenamiento: se usa el del sistema */ }
+  </script>
+</head>
+<body>
+  <a class="saltar" href="#panel">Saltar al panel</a>
+
+  <div id="banda-lectura" class="banda-lectura" role="region" aria-label="Mapa compartido" hidden>
+    <p><strong class="banda-titulo"></strong> <span class="banda-detalle">Solo lectura.</span></p>
+    <a class="btn" href="./">Ir a mi mapa</a>
+  </div>
+
+  <header class="barra">
+    <div class="marca">
+      <span class="bandera" aria-hidden="true"></span>
+      <h1>Mi Colombia</h1>
+    </div>
+
+    <div class="buscador" role="search">
+      <label for="buscar" class="sr-only">Buscar municipio</label>
+      <svg class="buscador-icono" aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input id="buscar" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false"
+        aria-controls="sugerencias" placeholder="Buscar municipio o código DIVIPOLA…" autocomplete="off" spellcheck="false">
+      <ul id="sugerencias" class="sugerencias" role="listbox" aria-label="Municipios encontrados" hidden></ul>
+    </div>
+
+    <div class="acciones">
+      <button id="btn-cuenta" class="btn-icono btn-cuenta" type="button" aria-label="Cuenta y sincronización" title="Cuenta y sincronización">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M7 18h10.5a4.5 4.5 0 0 0 .6-8.96A6 6 0 0 0 6.4 10.1 4 4 0 0 0 7 18Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        <span class="punto-estado" aria-hidden="true"></span>
+      </button>
+      <button id="btn-tema" class="btn-icono" type="button" aria-label="Cambiar tema">
+        <svg class="icono-luna" aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>
+        <svg class="icono-sol" aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></svg>
+      </button>
+      <details class="menu" id="menu-datos">
+        <summary class="btn">Mis datos</summary>
+        <div class="menu-lista">
+          <button type="button" id="btn-compartir">Compartir mi mapa…</button>
+          <button type="button" id="btn-png">Descargar mapa (PNG)</button>
+          <hr class="solo-edicion">
+          <button type="button" id="btn-importar-google" class="solo-edicion">Importar de Google Maps…</button>
+          <button type="button" id="btn-importar-fotos" class="solo-edicion">Importar desde fotos…</button>
+          <hr class="solo-edicion">
+          <button type="button" id="btn-exportar" class="solo-edicion">Exportar copia (JSON)</button>
+          <button type="button" id="btn-importar" class="solo-edicion">Importar copia (JSON)</button>
+          <button type="button" id="btn-instalar" hidden>Instalar como app</button>
+        </div>
+      </details>
+      <input type="file" id="archivo-importar" accept="application/json,.json" hidden>
+      <input type="file" id="archivo-google" accept="application/json,.json" multiple hidden>
+      <input type="file" id="archivo-fotos-importar" accept="image/*,.heic,.heif" multiple hidden>
+      <input type="file" id="archivo-fotos-lugar" accept="image/*" multiple hidden>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="mapa-zona" aria-label="Mapa de municipios">
+      <div id="mapa" aria-label="Mapa de Colombia por municipios. Flechas para desplazar, más y menos para acercar o alejar."></div>
+
+      <div class="mapa-controles">
+        <label class="sr-only" for="filtro-depto">Departamento</label>
+        <select id="filtro-depto">
+          <option value="">Todo el país</option>
+        </select>
+        <fieldset class="segmentado">
+          <legend class="sr-only">Colorear por</legend>
+          <input type="radio" name="modo" id="modo-estado" value="estado" checked>
+          <label for="modo-estado">Estado</label>
+          <input type="radio" name="modo" id="modo-anio" value="anio">
+          <label for="modo-anio">Por año</label>
+        </fieldset>
+        <details class="menu menu-capas" id="menu-capas">
+          <summary class="btn">Capas</summary>
+          <div class="menu-lista panel-capas">
+            <fieldset>
+              <legend>Mapa</legend>
+              <label class="interruptor"><input type="checkbox" name="capa" value="relieve"> Relieve</label>
+              <label class="interruptor"><input type="checkbox" name="capa" value="parques"> Parques nacionales</label>
+              <label class="interruptor"><input type="checkbox" name="capa" value="centros"> Centros poblados</label>
+            </fieldset>
+            <fieldset>
+              <legend>Modo viaje</legend>
+              <label class="interruptor"><input type="checkbox" name="capa" value="calor"> Mapa de calor de visitas</label>
+              <label class="interruptor"><input type="checkbox" name="capa" value="ruta"> Ruta por fechas</label>
+              <div class="rango-fechas" id="rango-ruta" hidden>
+                <label>Desde <input type="date" id="ruta-desde"></label>
+                <label>Hasta <input type="date" id="ruta-hasta"></label>
+                <p class="ayuda" id="ruta-resumen" aria-live="polite"></p>
+              </div>
+            </fieldset>
+            <p class="ayuda nota-capas">Los centros poblados aparecen al acercarte.</p>
+          </div>
+        </details>
+      </div>
+
+      <div id="leyenda" class="leyenda" aria-live="polite"></div>
+
+      <div id="chip-seleccion" class="chip-seleccion" hidden>
+        <div>
+          <p class="chip-nombre"></p>
+          <p class="chip-meta"></p>
+        </div>
+        <button type="button" class="btn primario chip-ir">Ver ficha</button>
+        <button type="button" class="btn-icono chip-cerrar" aria-label="Quitar selección">✕</button>
+      </div>
+
+      <div id="cargando" class="cargando" role="status">Cargando mapa…</div>
+    </section>
+
+    <aside id="panel" class="panel" tabindex="-1" aria-label="Panel de información">
+      <div class="pestanas" role="tablist" aria-label="Secciones">
+        <button type="button" role="tab" id="tab-lugar" data-vista="lugar" aria-controls="vista-lugar" aria-selected="false">Lugar</button>
+        <button type="button" role="tab" id="tab-stats" data-vista="stats" aria-controls="vista-stats" aria-selected="true">Resumen</button>
+        <button type="button" role="tab" id="tab-retos" data-vista="retos" aria-controls="vista-retos" aria-selected="false">Retos</button>
+        <button type="button" role="tab" id="tab-visitas" data-vista="visitas" aria-controls="vista-visitas" aria-selected="false">Visitas <span id="contador-visitas"></span></button>
+      </div>
+      <section role="tabpanel" id="vista-lugar" class="vista" aria-labelledby="tab-lugar" hidden></section>
+      <section role="tabpanel" id="vista-stats" class="vista" aria-labelledby="tab-stats"></section>
+      <section role="tabpanel" id="vista-retos" class="vista" aria-labelledby="tab-retos" hidden></section>
+      <section role="tabpanel" id="vista-visitas" class="vista" aria-labelledby="tab-visitas" hidden></section>
+    </aside>
+  </main>
+
+  <dialog id="dialogo-importar" aria-labelledby="dialogo-titulo">
+    <form method="dialog">
+      <h2 id="dialogo-titulo">Importar copia de seguridad</h2>
+      <p class="dialogo-texto"></p>
+      <div class="fila-botones">
+        <button class="btn primario" value="combinar">Combinar</button>
+        <button class="btn peligro" value="reemplazar">Reemplazar todo</button>
+        <button class="btn" value="cancelar">Cancelar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dialogo-cuenta" class="dialogo-ancho" aria-labelledby="cuenta-titulo">
+    <div class="dialogo-cabecera">
+      <h2 id="cuenta-titulo">Cuenta y sincronización</h2>
+      <button type="button" class="btn-icono" data-cerrar aria-label="Cerrar">✕</button>
+    </div>
+    <div class="dialogo-cuerpo" id="cuenta-cuerpo"></div>
+  </dialog>
+
+  <dialog id="dialogo-compartir" class="dialogo-ancho" aria-labelledby="compartir-titulo">
+    <div class="dialogo-cabecera">
+      <h2 id="compartir-titulo">Compartir mi mapa</h2>
+      <button type="button" class="btn-icono" data-cerrar aria-label="Cerrar">✕</button>
+    </div>
+    <div class="dialogo-cuerpo" id="compartir-cuerpo"></div>
+  </dialog>
+
+  <dialog id="dialogo-externo" class="dialogo-ancho" aria-labelledby="externo-titulo">
+    <div class="dialogo-cabecera">
+      <h2 id="externo-titulo">Importar visitas</h2>
+      <button type="button" class="btn-icono" data-cerrar aria-label="Cerrar">✕</button>
+    </div>
+    <div class="dialogo-cuerpo" id="externo-cuerpo"></div>
+  </dialog>
+
+  <dialog id="dialogo-foto" class="dialogo-foto" aria-label="Foto">
+    <button type="button" class="btn-icono cerrar-foto" data-cerrar aria-label="Cerrar">✕</button>
+    <figure>
+      <img alt="">
+      <figcaption></figcaption>
+    </figure>
+  </dialog>
+
+  <div id="aviso" class="aviso" role="status" aria-live="polite"></div>
+
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="vendor/leaflet-heat.js"></script>
+  <script src="vendor/topojson-client.min.js"></script>
+  <script src="vendor/exifr.umd.js" defer></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
