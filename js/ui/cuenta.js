@@ -60,10 +60,12 @@ export function iniciarCuenta({ nube, mostrarAviso }) {
 
     if (!e.usuario) {
       cuerpo.innerHTML = correoPendiente ? `
-        <p>Enviamos un correo a <strong>${esc(correoPendiente)}</strong>. Abre el enlace en este
-          dispositivo o escribe aquí el código de 6 dígitos.</p>
+        <p>Enviamos un correo a <strong>${esc(correoPendiente)}</strong> (remitente: Supabase Auth).
+          Ábrelo <strong>en este dispositivo</strong> y toca el enlace para entrar.</p>
+        <p class="ayuda">¿No llega? Revisa la carpeta de spam. Por seguridad solo se envían unos pocos
+          correos por hora. Si el correo trae un código numérico, también puedes escribirlo aquí.</p>
         <form class="form-cuenta" data-form="codigo">
-          <label class="campo"><span>Código</span>
+          <label class="campo"><span>Código (opcional)</span>
             <input name="codigo" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" required></label>
           <div class="fila-botones">
             <button class="btn primario" type="submit">Entrar</button>

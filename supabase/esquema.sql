@@ -55,6 +55,11 @@ create table if not exists public.perfiles (
   actualizada timestamptz not null default now()
 );
 
+-- ---------- Acceso por la API (algunos proyectos nuevos no lo dan por defecto) ----------
+
+grant select, insert, update, delete on public.visitas, public.deseos, public.fotos, public.perfiles
+  to authenticated;
+
 -- ---------- Seguridad por filas: cada quien ve y edita solo lo suyo ----------
 
 alter table public.visitas  enable row level security;

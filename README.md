@@ -21,21 +21,29 @@ Funciona 100 % en el navegador, sin servidor propio. Los datos se guardan en tu 
 | **Sin conexión** | Se instala como app (PWA) y funciona sin internet; *Mis datos → Instalar como app*. |
 | **Nube** | Cuenta con Supabase para sincronizar visitas, deseos y fotos entre dispositivos. |
 
-## Sincronización en la nube (opcional)
+## Sincronización en la nube
 
-Sin configurarla, todo funciona igual pero solo en el navegador que uses. Para activarla:
+Ya está configurada con el proyecto de Supabase `mi-colombia` (ver [`js/config.js`](js/config.js)).
+Publicada en https://hugobustamante13.github.io/mi-colombia/.
+
+Para montarla en otro proyecto de Supabase:
 
 1. Crea un proyecto gratuito en [supabase.com](https://supabase.com).
 2. En **SQL Editor**, pega y ejecuta [`supabase/esquema.sql`](supabase/esquema.sql). Crea las tablas,
    las reglas de seguridad (cada usuario solo ve lo suyo), el bucket privado de fotos y la función
    del mapa público.
-3. En **Project Settings → API**, copia la *Project URL* y la clave *anon public* en
-   [`js/config.js`](js/config.js). La clave *anon* es pública por diseño; la seguridad la dan las reglas RLS.
+3. En **Project Settings → API Keys**, copia la *Project URL* y la clave *publishable* (o *anon*) en
+   [`js/config.js`](js/config.js). Es pública por diseño; la seguridad la dan las reglas RLS.
 4. En **Authentication → URL Configuration**, pon la dirección donde publicaste la app como
    *Site URL* y agrégala (más `http://localhost:3000`) a *Redirect URLs*.
-5. Recomendado: en **Authentication → Email Templates → Magic Link**, agrega `{{ .Token }}` al mensaje.
-   Así el correo trae también un código de 6 dígitos, que es la forma cómoda de entrar desde la
-   app instalada (el enlace abre el navegador, no la app).
+5. Opcional: con un servidor de correo propio (*Authentication → SMTP*), en **Email Templates** puedes
+   agregar `{{ .Token }}` para que el correo traiga también un código. En el plan gratuito con el
+   correo de Supabase no se pueden editar las plantillas y solo se envían unos pocos correos por hora.
+
+**Entrar en el celular**: abre el enlace del correo en el mismo teléfono. En Android, si la app está
+instalada, el enlace se abre en ella o en Chrome (comparten la sesión). En iPhone, el enlace siempre
+abre Safari, y la app agregada a la pantalla de inicio no comparte esa sesión: usa la app desde
+Safari, o configura un servidor de correo propio para entrar con código (paso 5).
 
 Cómo sincroniza: al entrar, al abrir la app, 3 segundos después de cada cambio y al recuperar la
 conexión. Cada registro guarda cuándo cambió por última vez y gana el cambio más reciente; lo

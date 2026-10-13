@@ -9,7 +9,7 @@
  *
  * Al publicar cambios grandes, sube VERSION para descartar la caché anterior.
  */
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE_APP = `mi-colombia-app-${VERSION}`;
 const CACHE_TESELAS = 'mi-colombia-teselas';
 const MAX_TESELAS = 1500;

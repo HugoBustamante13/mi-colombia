@@ -1,14 +1,14 @@
 /**
- * Configuración de la nube (opcional).
+ * Configuración de la nube (Supabase).
  *
  * Sin estos valores la app funciona igual, solo en este navegador.
- * Para sincronizar entre dispositivos, crea un proyecto gratuito en https://supabase.com,
- * ejecuta supabase/esquema.sql y copia aquí los datos de
- * Project Settings → API ("Project URL" y la clave "anon public").
+ * Para usar otro proyecto, ejecuta supabase/esquema.sql en él y copia aquí la
+ * "Project URL" y la clave pública ("publishable" o "anon") de Project Settings → API Keys.
  *
- * La clave "anon" es pública por diseño: la seguridad la dan las políticas RLS del esquema.
+ * Esta clave es pública por diseño (viaja dentro de la app): la seguridad la dan
+ * las políticas RLS del esquema. Nunca pongas aquí la clave "secret" ni "service_role".
  */
 export const NUBE = {
-  url: '',          // p. ej. 'https://abcdefghijkl.supabase.co'
-  claveAnonima: '', // p. ej. 'eyJhbGciOi…'
+  url: 'https://wpfujjkfnjqhscgeocwk.supabase.co',
+  claveAnonima: 'sb_publishable_8e2gtwk8DtuzjWW7sqtF4w_Ut8ALDaR',
 };
